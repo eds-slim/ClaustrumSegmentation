@@ -37,11 +37,13 @@ full5tt = readFileNifti(tt5File);
 
 % Extract putamen
 tmp = readFileNifti(fslSegFile);
+%tmp.data = max(tmp.data,[],4);
 putamen = zeros(size(tmp.data));
-putamen(tmp.data==51) = 1;
+putamen(tmp.data==12) = 1;
 tmp.data = putamen;
 putamen = tmp;
 clear tmp
+
 
 %% (2) Find the Putamen edge and expand to get candidate ROI
 NumVoxExp = round(20 / t1w.pixdim(1));
@@ -79,6 +81,7 @@ NumVoxExp = round(5 / t1w.pixdim(1));
 for v=1:NumVoxExp
     tmp(find(circshift(tmp,v,1))) = 1;
 end
+
 csfMask(find(tmp)) = 0;
 
 [xcsf,ycsf,zcsf] = ind2sub(size(csfMask),find(csfMask));
@@ -111,7 +114,7 @@ dtiWriteNiftiWrapper(kmeanHigh, putamen.qto_xyz, [outDir,'/R_kmeansHigh.nii.gz']
 filt = 'box';  % 'gaussian', 'box'
 sz = [1,3,3];
 smoothedClaustrum = smooth3(kmeanLow,filt,sz);
-smoothedClaustrum(smoothedClaustrum<0.25) = 0;
+smoothedClaustrum(smoothedClaustrum<0.1) = 0;
 smoothedClaustrum = single(logical(smoothedClaustrum + kmeanLow));
 dtiWriteNiftiWrapper(smoothedClaustrum, putamen.qto_xyz, [outDir,'/R_clstrm2_kmeansLow_smooth25.nii.gz']);
 

@@ -38,7 +38,7 @@ full5tt = readFileNifti(tt5File);
 % Extract putamen
 tmp = readFileNifti(fslSegFile);
 putamen = zeros(size(tmp.data));
-putamen(tmp.data==12) = 1;
+putamen(tmp.data==51) = 1;
 tmp.data = putamen;
 putamen = tmp;
 clear tmp
@@ -84,9 +84,11 @@ csfMask(find(tmp)) = 0;
 
 [xcsf,ycsf,zcsf] = ind2sub(size(csfMask),find(csfMask));
 
+
 D = pdist2([xcsf,ycsf,zcsf],[x,y,z],'euclidean','smallest',1);
 highDistInd = find(D>5); % 5 mm away from CSF
 goodInd = sub2ind(size(tmp),x(highDistInd ),y(highDistInd ),z(highDistInd ));
+
 
 tmp = zeros(size(candidate));
 tmp(goodInd)=1;
@@ -94,6 +96,8 @@ dtiWriteNiftiWrapper(tmp, putamen.qto_xyz, [outDir,'/L_candidate_farFromCsf.nii.
 candidate = tmp;
 
 %% (4) k-means clustering
+%t1w
+%t1w.data
 t1wCandidate = t1w.data(find(candidate));
 [kidx,kclust] = kmeans(t1wCandidate,2,'MaxIter',1000);
 if kclust(1)>kclust(2) % make sure the 1st cluster has lower values
@@ -112,7 +116,7 @@ dtiWriteNiftiWrapper(kmeanHigh, putamen.qto_xyz, [outDir,'/L_kmeansHigh.nii.gz']
 filt = 'box';  % 'gaussian', 'box'
 sz = [1,3,3];
 smoothedClaustrum = smooth3(kmeanLow,filt,sz);
-smoothedClaustrum(smoothedClaustrum<0.25) = 0;
+smoothedClaustrum(smoothedClaustrum<0.1) = 0;
 smoothedClaustrum = single(logical(smoothedClaustrum + kmeanLow));
 dtiWriteNiftiWrapper(smoothedClaustrum, putamen.qto_xyz, [outDir,'/L_clstrm2_kmeansLow_smooth25.nii.gz']);
 
@@ -133,6 +137,6 @@ end
 
 %% (7) Save
 % Write final result to the subject's directory
-dtiWriteNiftiWrapper( claustrum, putamen.qto_xyz, fullfile(outDir,'L_claustrum_final.nii.gz'));
+dtiWriteNiftiWrapper( claustrum, putamen.qto_xyz, outFile);
 
 end
